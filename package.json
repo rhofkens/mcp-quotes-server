@@ -20,7 +20,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.13.3",
     "axios": "^1.10.0",
     "axios-retry": "^4.5.0",
     "cors": "^2.8.5",
