@@ -1,5 +1,15 @@
 # MCP Quotes Server
 
+[![CI](https://github.com/rhofkens/mcp-quotes-server/workflows/CI/badge.svg)](https://github.com/rhofkens/mcp-quotes-server/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=flat&logo=eslint&logoColor=white)](https://eslint.org/)
+[![Jest](https://img.shields.io/badge/-jest-%23C21325?style=flat&logo=jest&logoColor=white)](https://jestjs.io/)
+[![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blue)](https://github.com/modelcontextprotocol)
+[![Serper.dev](https://img.shields.io/badge/API-Serper.dev-green)](https://serper.dev)
+
 A Model Context Protocol (MCP) server that provides quotes based on user requests. This server demonstrates the basic implementation of an MCP server using TypeScript and the official MCP SDK.
 
 ## Features
