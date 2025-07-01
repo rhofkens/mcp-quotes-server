@@ -1,0 +1,197 @@
+name: Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [ main, master, develop ]
+
+# Cancel previous runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-info:
+    name: PR Information
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: PR Info
+      run: |
+        echo "## 📋 Pull Request Information" >> $GITHUB_STEP_SUMMARY
+        echo "- **PR Number:** #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Title:** ${{ github.event.pull_request.title }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Author:** @${{ github.event.pull_request.user.login }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Base Branch:** ${{ github.event.pull_request.base.ref }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Head Branch:** ${{ github.event.pull_request.head.ref }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Changed Files:** ${{ github.event.pull_request.changed_files }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Additions:** +${{ github.event.pull_request.additions }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deletions:** -${{ github.event.pull_request.deletions }}" >> $GITHUB_STEP_SUMMARY
+
+  changed-files:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    outputs:
+      src-changed: ${{ steps.changes.outputs.src }}
+      tests-changed: ${{ steps.changes.outputs.tests }}
+      docs-changed: ${{ steps.changes.outputs.docs }}
+      config-changed: ${{ steps.changes.outputs.config }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Detect changes
+      uses: dorny/paths-filter@v3
+      id: changes
+      with:
+        filters: |
+          src:
+            - 'src/**'
+          tests:
+            - '__tests__/**'
+            - '**/*.test.ts'
+            - '**/*.spec.ts'
+            - 'jest.config.js'
+          docs:
+            - 'docs/**'
+            - '*.md'
+          config:
+            - 'package.json'
+            - 'package-lock.json'
+            - 'tsconfig.json'
+            - '.eslintrc.json'
+            - '.prettierrc'
+            - 'jest.config.js'
+
+  quick-checks:
+    name: Quick Quality Checks
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    needs: changed-files
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Quick lint check
+      if: needs.changed-files.outputs.src-changed == 'true'
+      run: npm run lint
+    
+    - name: Quick format check
+      if: needs.changed-files.outputs.src-changed == 'true'
+      run: npx prettier --check .
+    
+    - name: Quick type check
+      if: needs.changed-files.outputs.src-changed == 'true'
+      run: npx tsc --noEmit
+
+  test-affected:
+    name: Test Affected Areas
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    needs: changed-files
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run affected tests
+      if: needs.changed-files.outputs.src-changed == 'true' || needs.changed-files.outputs.tests-changed == 'true'
+      run: npm test
+      env:
+        SERPER_API_KEY: ${{ secrets.SERPER_API_KEY || 'dummy-key-for-testing' }}
+
+  build-check:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    needs: changed-files
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      if: needs.changed-files.outputs.src-changed == 'true' || needs.changed-files.outputs.config-changed == 'true'
+      run: npm run build
+    
+    - name: Size comparison
+      if: needs.changed-files.outputs.src-changed == 'true'
+      run: |
+        echo "## 📦 Build Size Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+        find dist -name "*.js" -exec ls -lh {} \; | awk '{print "| " $9 " | " $5 " |"}' >> $GITHUB_STEP_SUMMARY
+
+  security-check:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    needs: changed-files
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Security audit
+      if: needs.changed-files.outputs.config-changed == 'true'
+      run: |
+        npm audit --audit-level=moderate || echo "⚠️ Security vulnerabilities found - please review"
+      continue-on-error: true
+
+  summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    needs: [quick-checks, test-affected, build-check, security-check]
+    
+    steps:
+    - name: PR Summary
+      run: |
+        echo "## ✅ Pull Request Check Summary" >> $GITHUB_STEP_SUMMARY
+        echo "All automated checks have completed for this pull request." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+        echo "- [ ] Code review by maintainers" >> $GITHUB_STEP_SUMMARY
+        echo "- [ ] Manual testing if required" >> $GITHUB_STEP_SUMMARY
+        echo "- [ ] Final approval and merge" >> $GITHUB_STEP_SUMMARY
