@@ -145,7 +145,7 @@ describe("HttpTransportService", () => {
     if (service) {
       try {
         service.stop?.();
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors in tests
       }
     }
