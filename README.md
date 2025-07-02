@@ -462,9 +462,31 @@ await client.connect(transport);
 
 ## MCP Inspector Tool Usage
 
-### Installation and Setup
+### Quick Setup (Recommended)
 
-The MCP Inspector is a tool for testing and debugging MCP servers. To use it with this server:
+The easiest way to test this MCP server is using the published NPM package:
+
+1. Install the MCP Inspector globally:
+
+```bash
+npm install -g @modelcontextprotocol/inspector
+```
+
+2. Start the MCP Inspector:
+
+```bash
+mcp-inspector
+```
+
+3. In the MCP Inspector interface:
+   - **Transport Type**: STDIO
+   - **Command**: `npx`
+   - **Arguments**: `@rhofkens/mcp-quotes-server@0.1.3`
+   - Click "Connect"
+
+### Alternative: Local Development Setup
+
+If you want to test with local code changes:
 
 1. Install the MCP Inspector globally:
 

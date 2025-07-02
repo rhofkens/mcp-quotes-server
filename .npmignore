@@ -1,0 +1,50 @@
+# Source files (keep compiled dist)
+src/
+__tests__/
+docs/
+
+# Development files
+*.test.ts
+*.test.js
+jest.config.js
+eslint.config.js
+.prettierrc
+.prettierignore
+tsconfig.json
+
+# CI/CD and tooling
+.github/
+.vscode/
+.roomodes
+
+# Logs and temporary files
+*.log
+combined.log
+errors.log
+coverage/
+.nyc_output/
+
+# Environment files
+.env*
+!.env.example
+
+# Development dependencies artifacts
+.eslintcache
+*.tsbuildinfo
+node_modules/
+
+# Package manager files
+package-lock.json
+yarn.lock
+
+# Build artifacts that shouldn't be published
+build/
+temp/
+tmp/
+
+# Git files
+.git/
+.gitignore
+
+# NPM package testing
+*.tgz
